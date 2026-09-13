@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess Engine · Rachit4474</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet"
+        href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+  <style>
+    :root {
+      --cyan: #00f5ff;
+      --magenta: #ff00aa;
+      --bg: #05070a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at top, #0a1628 0%, var(--bg) 60%);
+      color: #e6edf3;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+    }
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.4rem;
+    }
+    .status {
+      margin: 0.8rem 0 1.2rem;
+      padding: 0.5rem 1.2rem;
+      border: 1px solid rgba(0,245,255,0.4);
+      border-radius: 8px;
+      background: rgba(0,245,255,0.08);
+      font-size: 0.95rem;
+      color: var(--cyan);
+      min-height: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #board {
+      width: min(90vw, 480px);
+      box-shadow: 0 0 40px rgba(0,245,255,0.25);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .controls {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      padding: 0.6rem 1.2rem;
+      border: 1px solid var(--cyan);
+      background: transparent;
+      color: var(--cyan);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: var(--cyan);
+      color: #000;
+      box-shadow: 0 0 15px rgba(0,245,255,0.5);
+    }
+    .back {
+      margin-top: 1.8rem;
+      color: var(--cyan);
+      text-decoration: none;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .back:hover { opacity: 1; text-decoration: underline; }
+    .info {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      opacity: 0.6;
+      text-align: center;
+      max-width: 480px;
+    }
+  </style>
+</head>
+<body>
+  <h1>♟️ CHESS ENGINE</h1>
+  <div class="status" id="status">White to move</div>
+  <div id="board"></div>
+
+  <div class="controls">
+    <button id="resetBtn">New Game</button>
+    <button id="undoBtn">Undo</button>
+    <button id="flipBtn">Flip Board</button>
+  </div>
+
+  <a href="index.html" class="back">← Back to Neural Hub</a>
+  <p class="info">Drag pieces or click source then destination. Full FIDE rules + check detection.</p>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script>
+    const game = new Chess();
+    let board = null;
+
+    function updateStatus() {
+      let status = '';
+      const moveColor = game.turn() === 'w' ? 'White' : 'Black';
+
+      if (game.in_checkmate()) {
+        status = `Checkmate! ${moveColor === 'White' ? 'Black' : 'White'} wins.`;
+      } else if (game.in_draw()) {
+        status = 'Draw (stalemate / insufficient material / 50-move / threefold)';
+      } else {
+        status = moveColor + ' to move';
+        if (game.in_check()) status += ' — CHECK!';
+      }
+      document.getElementById('status').textContent = status;
+    }
+
+    function onDragStart(source, piece) {
+      if (game.game_over()) return false;
+      if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+          (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+        return false;
+      }
+    }
+
+    function onDrop(source, target) {
+      const move = game.move({
+        from: source,
+        to: target,
+        promotion: 'q'
+      });
+      if (move === null) return 'snapback';
+      updateStatus();
+    }
+
+    function onSnapEnd() {
+      board.position(game.fen());
+    }
+
+    board = Chessboard('board', {
+      draggable: true,
+      position: 'start',
+      onDragStart: onDragStart,
+      onDrop: onDrop,
+      onSnapEnd: onSnapEnd,
+      pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+    });
+
+    updateStatus();
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      game.reset();
+      board.start();
+      updateStatus();
+    });
+
+    document.getElementById('undoBtn').addEventListener('click', () => {
+      game.undo();
+      board.position(game.fen());
+      updateStatus();
+    });
+
+    document.getElementById('flipBtn').addEventListener('click', () => {
+      board.flip();
+    });
+
+    // Responsive
+    window.addEventListener('resize', () => board.resize());
+  </script>
+</body>
+</html>

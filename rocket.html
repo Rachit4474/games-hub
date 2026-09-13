@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rocket Survival · Rachit4474</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cyan: #00f5ff;
+      --magenta: #ff00aa;
+      --bg: #05070a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: #05070a;
+      color: #e6edf3;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.6rem;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      position: absolute;
+      top: 12px;
+      z-index: 10;
+    }
+    #gameCanvas {
+      display: block;
+      background: radial-gradient(ellipse at center, #0a1628 0%, #05070a 70%);
+      border: 1px solid rgba(0,245,255,0.3);
+      box-shadow: 0 0 40px rgba(0,245,255,0.15);
+      max-width: 100vw;
+      max-height: 85vh;
+    }
+    .hud {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 2rem;
+      font-size: 1rem;
+      color: var(--cyan);
+      z-index: 10;
+      pointer-events: none;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(5,7,10,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      text-align: center;
+    }
+    .overlay h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.2rem;
+      color: var(--magenta);
+      margin-bottom: 1rem;
+    }
+    .overlay p { margin-bottom: 1.5rem; opacity: 0.85; }
+    button {
+      font-family: 'Orbitron', sans-serif;
+      padding: 0.8rem 1.8rem;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00c4cc, #00f5ff);
+      color: #000;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 25px rgba(0,245,255,0.6);
+    }
+    .back {
+      position: absolute;
+      bottom: 16px;
+      color: var(--cyan);
+      text-decoration: none;
+      font-size: 0.85rem;
+      opacity: 0.7;
+      z-index: 10;
+    }
+    .back:hover { opacity: 1; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <h1>🚀 ROCKET SURVIVAL</h1>
+  <div class="hud">
+    <span>SCORE: <span id="score">0</span></span>
+    <span>LIVES: <span id="lives">3</span></span>
+  </div>
+
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <div class="overlay" id="startOverlay">
+    <h2>READY FOR LAUNCH</h2>
+    <p>Arrow keys / WASD to move<br>Space to fire<br>Dodge asteroids & survive!</p>
+    <button id="startBtn">START MISSION</button>
+  </div>
+
+  <div class="overlay hidden" id="gameOverOverlay">
+    <h2>MISSION FAILED</h2>
+    <p>Final Score: <span id="finalScore">0</span></p>
+    <button id="restartBtn">RETRY</button>
+  </div>
+
+  <a href="index.html" class="back">← Back to Neural Hub</a>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const startOverlay = document.getElementById('startOverlay');
+    const gameOverOverlay = document.getElementById('gameOverOverlay');
+    const finalScoreEl = document.getElementById('finalScore');
+
+    // Resize canvas to fit
+    function resize() {
+      const maxW = Math.min(800, window.innerWidth - 20);
+      const maxH = Math.min(600, window.innerHeight - 120);
+      const scale = Math.min(maxW / 800, maxH / 600);
+      canvas.style.width = (800 * scale) + 'px';
+      canvas.style.height = (600 * scale) + 'px';
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Game state
+    let running = false;
+    let score = 0;
+    let lives = 3;
+    let keys = {};
+    let bullets = [];
+    let asteroids = [];
+    let particles = [];
+    let stars = [];
+    let frame = 0;
+    let spawnTimer = 0;
+
+    const ship = {
+      x: 400,
+      y: 500,
+      w: 28,
+      h: 36,
+      speed: 5.5,
+      cooldown: 0
+    };
+
+    // Stars background
+    for (let i = 0; i < 120; i++) {
+      stars.push({
+        x: Math.random() * 800,
+        y: Math.random() * 600,
+        size: Math.random() * 1.8 + 0.4,
+        speed: Math.random() * 1.5 + 0.3
+      });
+    }
+
+    function resetGame() {
+      score = 0;
+      lives = 3;
+      bullets = [];
+      asteroids = [];
+      particles = [];
+      ship.x = 400;
+      ship.y = 500;
+      ship.cooldown = 0;
+      frame = 0;
+      spawnTimer = 0;
+      scoreEl.textContent = 0;
+      livesEl.textContent = 3;
+      gameOverOverlay.classList.add('hidden');
+      startOverlay.classList.add('hidden');
+      running = true;
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('startBtn').addEventListener('click', resetGame);
+    document.getElementById('restartBtn').addEventListener('click', resetGame);
+
+    window.addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+    });
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    function spawnAsteroid() {
+      const size = 20 + Math.random() * 35;
+      asteroids.push({
+        x: Math.random() * 800,
+        y: -size,
+        r: size,
+        vx: (Math.random() - 0.5) * 2.5,
+        vy: 1.5 + Math.random() * 2.8 + score * 0.008,
+        rot: 0,
+        rotSpeed: (Math.random() - 0.5) * 0.08
+      });
+    }
+
+    function createExplosion(x, y, color) {
+      for (let i = 0; i < 14; i++) {
+        particles.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 7,
+          vy: (Math.random() - 0.5) * 7,
+          life: 30 + Math.random() * 20,
+          color
+        });
+      }
+    }
+
+    function loop() {
+      if (!running) return;
+      frame++;
+      ctx.clearRect(0, 0, 800, 600);
+
+      // Stars
+      ctx.fillStyle = '#ffffff';
+      stars.forEach(s => {
+        s.y += s.speed;
+        if (s.y > 600) { s.y = 0; s.x = Math.random() * 800; }
+        ctx.globalAlpha = 0.4 + Math.random() * 0.5;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // Ship movement
+      if (keys['ArrowLeft'] || keys['KeyA']) ship.x -= ship.speed;
+      if (keys['ArrowRight'] || keys['KeyD']) ship.x += ship.speed;
+      if (keys['ArrowUp'] || keys['KeyW']) ship.y -= ship.speed;
+      if (keys['ArrowDown'] || keys['KeyS']) ship.y += ship.speed;
+      ship.x = Math.max(20, Math.min(780, ship.x));
+      ship.y = Math.max(30, Math.min(570, ship.y));
+
+      // Shooting
+      if (ship.cooldown > 0) ship.cooldown--;
+      if ((keys['Space'] || keys['KeyZ']) && ship.cooldown <= 0) {
+        bullets.push({ x: ship.x, y: ship.y - 20, vy: -9 });
+        ship.cooldown = 12;
+      }
+
+      // Draw ship (neon triangle)
+      ctx.save();
+      ctx.translate(ship.x, ship.y);
+      ctx.beginPath();
+      ctx.moveTo(0, -18);
+      ctx.lineTo(14, 16);
+      ctx.lineTo(0, 10);
+      ctx.lineTo(-14, 16);
+      ctx.closePath();
+      ctx.fillStyle = '#00f5ff';
+      ctx.shadowColor = '#00f5ff';
+      ctx.shadowBlur = 15;
+      ctx.fill();
+      // engine glow
+      ctx.beginPath();
+      ctx.moveTo(-6, 14);
+      ctx.lineTo(0, 22 + Math.random() * 6);
+      ctx.lineTo(6, 14);
+      ctx.fillStyle = '#ff00aa';
+      ctx.shadowColor = '#ff00aa';
+      ctx.fill();
+      ctx.restore();
+
+      // Bullets
+      ctx.fillStyle = '#00ff9f';
+      ctx.shadowColor = '#00ff9f';
+      ctx.shadowBlur = 8;
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.y += b.vy;
+        if (b.y < -10) { bullets.splice(i, 1); continue; }
+        ctx.fillRect(b.x - 2, b.y - 8, 4, 12);
+      }
+      ctx.shadowBlur = 0;
+
+      // Spawn asteroids
+      spawnTimer++;
+      const spawnRate = Math.max(25, 55 - Math.floor(score / 80));
+      if (spawnTimer > spawnRate) {
+        spawnAsteroid();
+        spawnTimer = 0;
+      }
+
+      // Asteroids
+      for (let i = asteroids.length - 1; i >= 0; i--) {
+        const a = asteroids[i];
+        a.x += a.vx;
+        a.y += a.vy;
+        a.rot += a.rotSpeed;
+
+        if (a.y > 650 || a.x < -50 || a.x > 850) {
+          asteroids.splice(i, 1);
+          continue;
+        }
+
+        // Draw rocky asteroid
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        ctx.rotate(a.rot);
+        ctx.beginPath();
+        for (let j = 0; j < 7; j++) {
+          const ang = (j / 7) * Math.PI * 2;
+          const r = a.r * (0.75 + Math.sin(j * 2.3) * 0.25);
+          const px = Math.cos(ang) * r;
+          const py = Math.sin(ang) * r;
+          if (j === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fillStyle = '#3a2a4a';
+        ctx.strokeStyle = '#ff00aa';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#ff00aa';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // Collision with ship
+        const dx = a.x - ship.x;
+        const dy = a.y - ship.y;
+        if (Math.sqrt(dx * dx + dy * dy) < a.r + 16) {
+          createExplosion(ship.x, ship.y, '#ff00aa');
+          createExplosion(a.x, a.y, '#00f5ff');
+          asteroids.splice(i, 1);
+          lives--;
+          livesEl.textContent = lives;
+          if (lives <= 0) {
+            running = false;
+            finalScoreEl.textContent = score;
+            gameOverOverlay.classList.remove('hidden');
+            return;
+          }
+          // brief invulnerability via position reset
+          ship.x = 400;
+          ship.y = 500;
+        }
+      }
+
+      // Bullet vs asteroid
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        for (let j = asteroids.length - 1; j >= 0; j--) {
+          const a = asteroids[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          if (Math.sqrt(dx * dx + dy * dy) < a.r) {
+            createExplosion(a.x, a.y, '#00ff9f');
+            bullets.splice(i, 1);
+            asteroids.splice(j, 1);
+            score += Math.floor(a.r);
+            scoreEl.textContent = score;
+            break;
+          }
+        }
+      }
+
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        ctx.globalAlpha = p.life / 40;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      requestAnimationFrame(loop);
+    }
+  </script>
+</body>
+</html>

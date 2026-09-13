@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rachit4474 · Neural Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cyan: #00f5ff;
+      --magenta: #ff00aa;
+      --lime: #00ff9f;
+      --bg: #05070a;
+      --card: rgba(13, 17, 23, 0.85);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 20% 20%, #0a1628 0%, var(--bg) 50%),
+                  radial-gradient(ellipse at 80% 80%, #1a0a2e 0%, transparent 50%);
+      color: #e6edf3;
+      font-family: 'Share Tech Mono', monospace;
+      overflow-x: hidden;
+    }
+    .grid-bg {
+      position: fixed; inset: 0; z-index: -1;
+      background-image:
+        linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(40px); }
+    }
+    header {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+    }
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 3.2rem);
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--lime));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 40px rgba(0,245,255,0.4);
+      letter-spacing: 0.05em;
+    }
+    .subtitle {
+      margin-top: 0.6rem;
+      color: var(--cyan);
+      opacity: 0.85;
+      font-size: 0.95rem;
+      letter-spacing: 0.15em;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.8rem;
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1.5rem 4rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(0,245,255,0.25);
+      border-radius: 16px;
+      padding: 2rem 1.6rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.35s ease;
+      backdrop-filter: blur(12px);
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-8px);
+      border-color: var(--cyan);
+      box-shadow: 0 0 30px rgba(0,245,255,0.25), 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .card:hover::before { opacity: 1; }
+    .card .icon {
+      font-size: 3.2rem;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 0 12px currentColor);
+    }
+    .card h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.35rem;
+      margin-bottom: 0.7rem;
+      color: var(--cyan);
+    }
+    .card p {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      opacity: 0.8;
+      margin-bottom: 1.4rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.7rem 1.6rem;
+      border-radius: 8px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      transition: all 0.25s;
+      border: 1px solid transparent;
+    }
+    .btn-cyan {
+      background: linear-gradient(135deg, #00c4cc, #00f5ff);
+      color: #000;
+    }
+    .btn-cyan:hover {
+      box-shadow: 0 0 20px rgba(0,245,255,0.6);
+      transform: scale(1.05);
+    }
+    .btn-magenta {
+      background: linear-gradient(135deg, #cc0088, #ff00aa);
+      color: #fff;
+    }
+    .btn-magenta:hover {
+      box-shadow: 0 0 20px rgba(255,0,170,0.6);
+      transform: scale(1.05);
+    }
+    .btn-lime {
+      background: linear-gradient(135deg, #00cc7a, #00ff9f);
+      color: #000;
+    }
+    .btn-lime:hover {
+      box-shadow: 0 0 20px rgba(0,255,159,0.6);
+      transform: scale(1.05);
+    }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.8rem;
+      opacity: 0.6;
+    }
+    footer a { color: var(--cyan); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <header>
+    <h1>RACHIT4474</h1>
+    <p class="subtitle">NEURAL HUB · 3D WIDGETS · INTERACTIVE GAMES</p>
+  </header>
+
+  <div class="cards">
+    <div class="card">
+      <div class="icon" style="color: var(--cyan);">♟️</div>
+      <h2>CHESS ENGINE</h2>
+      <p>Full rules engine with legal move highlighting, check detection, and drag-and-drop pieces. Challenge the matrix.</p>
+      <a href="chess.html" class="btn btn-cyan">LAUNCH CHESS</a>
+    </div>
+
+    <div class="card">
+      <div class="icon" style="color: var(--magenta);">🚀</div>
+      <h2>ROCKET SURVIVAL</h2>
+      <p>Pilot through an asteroid field. Dodge, shoot, and survive as long as possible. High-score mode engaged.</p>
+      <a href="rocket.html" class="btn btn-magenta">LAUNCH ROCKET</a>
+    </div>
+
+    <div class="card">
+      <div class="icon" style="color: var(--lime);">🌌</div>
+      <h2>3D SCENE</h2>
+      <p>Interactive Three.js environment with neon geometries, particle fields, and orbit controls. Drag to explore.</p>
+      <a href="3d.html" class="btn btn-lime">ENTER 3D</a>
+    </div>
+  </div>
+
+  <footer>
+    Built for <a href="https://github.com/Rachit4474" target="_blank">Rachit4474</a> · Futuristic GitHub Profile Hub · 2026
+  </footer>
+</body>
+</html>
